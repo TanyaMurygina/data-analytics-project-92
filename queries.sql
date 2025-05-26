@@ -1,9 +1,9 @@
---Cчитаем общее количество покупателей
+--4. Cчитаем общее количество покупателей
 select
 	COUNT(customer_id) as customers_count
 from customers c;
 
-/*Первый отчет о десятке лучших продавцов с максимальной выручкой за всё время.
+/*5.1. Первый отчет о десятке лучших продавцов с максимальной выручкой за всё время.
 Данные о продавце, суммарной выручке с проданных товаров и количестве проведенных сделок.
 Отсортировка по убыванию выручки.*/ 
 select
@@ -18,7 +18,7 @@ group by
 	seller
 order by income desc limit 10;
 
-/*Второй отчет содержит информацию о продавцах, 
+/*5.2. Второй отчет содержит информацию о продавцах, 
  чья средняя выручка за сделку меньше средней выручки за сделку по всем продавцам. 
  Сортировка по выручке по возрастанию.*/ 
 select
@@ -40,7 +40,7 @@ having	AVG(s.quantity * p.price) < (
 )
 order by average_income;
 
-/*Третий отчет содержит информацию о продавцах, 
+/*5.3. Третий отчет содержит информацию о продавцах, 
  чья средняя выручка за сделку меньше средней выручки за сделку по всем продавцам. 
  Сортировка по порядковому номеру дня недели и seller.*/ 
 --Создадим таблицу для сортировки по порядковому номеру дня недели
@@ -63,3 +63,53 @@ select
 	day_of_week,
 	income
 from tab;
+
+/*6.1 Первый отчет - количество покупателей в разных возрастных группах.
+ Используем union all. Сортировка по возрастной категории.*/
+select '16-25' as age_category,
+	count(c.customer_id) as age_count
+from customers c
+where c.age between 16 and 25
+group by age_category
+union all
+select '26-40' as age_category,
+	count(c.customer_id) as age_count
+from customers c
+where c.age between 26 and 40
+group by age_category
+union all
+select	'40+' as age_category,
+	count(c.customer_id) as age_count
+from customers c
+where c.age > 40
+group by age_category
+order by age_category;
+
+/*6.2. Второй отчет - необходимо предоставить данные по количеству уникальных покупателей и выручке, 
+ которую они принесли. Сортировка по дате.*/
+select
+	to_char(s.sale_date, 'YYYY-MM') as selling_month,
+	count(distinct c.customer_id) as total_customers,
+	FLOOR(SUM(s.quantity * p.price)) as income
+from sales s join customers c on
+	s.customer_id = c.customer_id
+join products p on
+	s.product_id = p.product_id
+group by selling_month
+order by selling_month;
+
+
+/*6.3. Третий отчет о покупателях, первая покупка которых была в ходе проведения акций (акционные товары со стоимостью равной 0). 
+ Сортировака по id покупателя.*/
+select	distinct on	(s.customer_id)
+   CONCAT(c.first_name, ' ', c.last_name, null) as customer,
+   s.sale_date,
+   CONCAT(e.first_name, ' ', e.last_name, null) as seller
+from sales s join customers c on
+	s.customer_id = c.customer_id
+join products p on
+	s.product_id = p.product_id
+join employees e on
+	s.sales_person_id = e.employee_id
+where p.price = 0
+order by s.customer_id, s.sale_date;
