@@ -6,36 +6,28 @@ from customers;
 Данные о продавце, суммарной выручке с проданных товаров и количестве проведенных сделок.
 Отсортировка по убыванию выручки.*/
 select
-    CONCAT(e.first_name, ' ', e.last_name, null) as seller,
+    CONCAT(e.first_name, ' ', e.last_name) as seller,
     COUNT(s.sales_id) as operations,
     FLOOR(SUM(s.quantity * p.price)) as income
-from employees as e inner join sales as s
-    on
-        e.employee_id = s.sales_person_id
-inner join products as p
-    on
-        s.product_id = p.product_id
-group by
-    seller
+from employees as e join sales as s
+    on e.employee_id = s.sales_person_id
+join products as p on s.product_id = p.product_id
+group by seller
 order by income desc limit 10;
 
 /*5.2. Второй отчет содержит информацию о продавцах,
  чья средняя выручка за сделку меньше средней выручки за сделку по всем продавцам.
  Сортировка по выручке по возрастанию.*/
 select
-    CONCAT(e.first_name, ' ', e.last_name, null) as seller,
+    CONCAT(e.first_name, ' ', e.last_name) as seller,
     FLOOR(AVG(s.quantity * p.price)) as average_income
-from
-    employees as e inner join sales as s
-    on
-        e.employee_id = s.sales_person_id
-inner join products as p
-    on
-        s.product_id = p.product_id
+from employees as e join sales as s
+    on e.employee_id = s.sales_person_id
+inner join products as p 
+    on s.product_id = p.product_id
 group by seller
 --С помощью having ограничим только те записи, которые меньше общего среднего
-having
-    AVG(s.quantity * p.price) < (
+having AVG(s.quantity * p.price) < (
         select AVG(s.quantity * p.price)
         from sales as s
         inner join products as p on
@@ -49,7 +41,7 @@ order by average_income;
 --Создадим таблицу для сортировки по порядковому номеру дня недели
 with tab as (
     select
-        CONCAT(e.first_name, ' ', e.last_name, null) as seller,
+        CONCAT(e.first_name, ' ', e.last_name) as seller,
         EXTRACT(isodow from s.sale_date) as num_day,
         TO_CHAR(sale_date, 'day') as day_of_week,
         FLOOR(SUM(s.quantity * p.price)) as income
@@ -61,9 +53,8 @@ with tab as (
         on
             s.product_id = p.product_id
     group by seller, num_day, day_of_week
-    order by seller, num_day
+    order by num_day, seller
 )
-
 --Выведем необходимые данные
 select
     seller,
@@ -115,8 +106,8 @@ order by selling_month;
  Сортировака по id покупателя.*/
 select distinct on (s.customer_id)
     s.sale_date,
-    CONCAT(c.first_name, ' ', c.last_name, null) as customer,
-    CONCAT(e.first_name, ' ', e.last_name, null) as seller
+    CONCAT(c.first_name, ' ', c.last_name) as customer,
+    CONCAT(e.first_name, ' ', e.last_name) as seller
 from sales as s inner join customers as c
     on
         s.customer_id = c.customer_id
