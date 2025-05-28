@@ -136,4 +136,3 @@ inner join employees as e
     on s.sales_person_id = e.employee_id
 where p.price = 0
 order by s.customer_id, s.sale_date;
-
